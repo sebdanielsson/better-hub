@@ -1,3 +1,5 @@
+import { getGithubHost } from "./github-host-client";
+
 export const LANGUAGE_COLORS: Record<string, string> = {
 	TypeScript: "#3178c6",
 	JavaScript: "#f1e05a",
@@ -249,10 +251,22 @@ function parsePositiveInt(value: string | undefined): number | null {
 	return parsed > 0 && parsed <= Number.MAX_SAFE_INTEGER ? parsed : null;
 }
 
+/**
+ * Whether a hostname belongs to the GitHub instance this app is configured for.
+ *
+ * Only the *active* host counts: on github.com that's `github.com`, but on an
+ * enterprise instance public `github.com` links are external (they point at a
+ * different system the app can't resolve), so they must not be rewritten to
+ * internal app routes.
+ */
+export function isKnownGithubHostname(hostname: string): boolean {
+	return hostname === getGithubHost();
+}
+
 export function parseGitHubUrl(htmlUrl: string): ParsedGitHubUrl | null {
 	try {
 		const url = new URL(htmlUrl);
-		if (url.hostname !== "github.com") return null;
+		if (!isKnownGithubHostname(url.hostname)) return null;
 
 		const parts = url.pathname.split("/").filter(Boolean);
 		if (parts.length === 0) return null;
